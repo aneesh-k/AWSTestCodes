@@ -10,7 +10,7 @@ namespace CodeTest.AmazonS3
 {
     public partial class AmazonS3
     {
-        public void DeleteBucket(string bucketName, string bucketKey=null)
+        public void DeleteBucket(string bucketName, string bucketKey)
         {
               
 
