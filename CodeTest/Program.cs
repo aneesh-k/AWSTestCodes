@@ -22,6 +22,7 @@ namespace CodeTest
 
             Console.WriteLine("Done");
             Console.Read();
+
         }
 
         //public static string GetServiceOutput()
