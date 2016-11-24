@@ -1,0 +1,129 @@
+﻿{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "This template creates a single server installation of Microsoft SQL Server. **WARNING** This template creates Amazon EC2 Windows instance and related resources. You will be billed for the AWS resources used if you create a stack from this template.",
+
+  "Parameters" : {
+    "KeyPairName" : {
+      "Description" : "Name of an existing EC2 KeyPair",
+      "Type" : "AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription" : "must be the name of an existing EC2 KeyPair.",
+      "Default" : "DatabaseServers"
+    },
+    "VPC" : {
+      "Type" : "String",
+      "Default" : "vpc-c55ce6a1"
+    },
+    "InstanceType": {
+      "Description": "Amazon EC2 instance type",
+      "Type": "String",
+      "Default": "m1.large",
+      "AllowedValues": [ "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "g2.2xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge" ],
+      "ConstraintDescription": "must be a valid EC2 instance type."
+    },
+    "ServerOperatingSystem": {
+      "Description": "Windows Server Operating System",
+      "Type": "String",
+      "Default": "Windows2012r2",
+      "AllowedValues": [ "Windows2008r2", "Windows2012r2" ],
+      "ConstraintDescription": "must be a valid Windows OS type."
+
+    },
+    "MSSQLVersion": {
+      "Description": "Microsoft SQL Server Version",
+      "Type": "String",
+      "Default": "sql-server-2014-standard",
+      "AllowedValues": [ "sql-server-2012-standard", "sql-server-2014-standard", "sql-server-2016-standard" ],
+      "ConstraintDescription": "must be a valid SQL Server Version"
+    },
+    "SubnetId": {
+      "Type": "String",
+      "Default": "subnet-00000000",
+      "Description": "This property specifies the ID of the subnet that you want to launch the instance into."
+    },
+    "InstanceSecurityGroup": {
+      "Type": "String",
+      "Default": "sg-fff9bc99",
+      "Description": "A list that contains the Amazon EC2 security groups to assign to the Amazon EC2 instance."
+    }
+  },
+
+  "Mappings" : {
+    "AWSRegion2AMI" : {
+      "us-east-1"        : {"Windows2008r2" : "ami-e17a958c", "Windows2012r2" : "ami-e0e00f8d"},
+      "us-west-2"        : {"Windows2008r2" : "ami-8bba46eb", "Windows2012r2" : "ami-8db945ed"},
+      "us-west-1"        : {"Windows2008r2" : "ami-5fc4bd3f", "Windows2012r2" : "ami-b8c5bcd8"},
+      "eu-west-1"        : {"Windows2008r2" : "ami-6aee7b19", "Windows2012r2" : "ami-29eb7e5a"},
+      "eu-central-1"     : {"Windows2008r2" : "ami-307d905f", "Windows2012r2" : "ami-827d90ed"},
+      "ap-northeast-1"   : {"Windows2008r2" : "ami-857e99e4", "Windows2012r2" : "ami-447a9d25"},
+      "ap-northeast-2"   : {"Windows2008r2" : "ami-32579f5c", "Windows2012r2" : "ami-3e75bd50"},
+      "ap-southeast-1"   : {"Windows2008r2" : "ami-59f7213a", "Windows2012r2" : "ami-5bf72138"},
+      "ap-southeast-2"   : {"Windows2008r2" : "ami-cc6d42af", "Windows2012r2" : "ami-4c6d422f"},
+      "sa-east-1"        : {"Windows2008r2" : "ami-05860e69", "Windows2012r2" : "ami-588f0734"},
+      "cn-north-1"       : {"Windows2008r2" : "ami-52d3193f", "Windows2012r2" : "ami-21dd174c"}
+    },
+    "MSSQLversionMap" : {
+      "sql-server-2012-standard" : {"S3Bucket" : "trtagov-installers", "ISO" : "Microsoft/Sql Server/en_sql_server_2012_standard_edition_with_service_pack_3_x64_dvd_7286878.iso", "BootstrapScript" : "Microsoft/Sql Server/InstallMSSQL2012Std-StandAlone.ps1"},
+      "sql-server-2014-standard" : {"S3Bucket" : "trtagov-installers", "ISO" : "Microsoft/Sql Server/en_sql_server_2014_standard_edition_with_service_pack_1_x64_dvd_6669998.iso", "BootstrapScript" : "Microsoft/Sql Server/InstallMSSQL2014Std-StandAlone.ps1"},
+      "sql-server-2016-standard" : {"S3Bucket" : "trtagov-installers", "ISO" : "Microsoft/Sql Server/en_sql_server_2016_standard_x64_dvd_8701871.iso",                             "BootstrapScript" : "Microsoft/Sql Server/InstallMSSQL2016Std-StandAlone.ps1"}
+    }
+  },
+
+  "Resources" : {
+    "DatabaseServer" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "ImageId" : {
+            "Fn::FindInMap" : [
+                "AWSRegion2AMI",
+                { "Ref" : "AWS::Region" },
+                { "Ref" : "ServerOperatingSystem" } 
+            ]
+        },
+        "InstanceType" : { "Ref" : "InstanceType"},
+        "EbsOptimized" : "true",
+        "IamInstanceProfile": "IAMInstance-DBServerIAMInstanceProfile-10CBJZMOQ63HC",
+        "KeyName": { "Ref": "KeyPairName" },
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": true,
+            "DeleteOnTermination": "True",
+            "Description": "SQL Network Inteface",
+            "DeviceIndex": "0",
+            "GroupSet": [ { "Ref": "InstanceSecurityGroup" } ],
+            "SubnetId": { "Ref": "SubnetId" }
+          }
+        ],
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/sda1",
+            "Ebs": {
+              "VolumeSize": "100",
+              "VolumeType": "gp2"
+            }
+          }
+        ],
+        "Tags" : [
+          { "Key" : "Name", "Value" : { "Ref" : "AWS::StackName" } }
+          ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "<script>\n",
+                "PowerShell -ExecutionPolicy RemoteSigned -Command {Set-ExecutionPolicy RemoteSigned}\n",
+                "</script>\n",
+                "<powershell>\n",
+                "Read-S3Object -BucketName trtagov-installers -Key \"",{"Fn::FindInMap" : ["MSSQLversionMap",{ "Ref" : "MSSQLVersion"},"BootstrapScript"]},"\" -File C:\\Bootstrap.ps1\n",
+                "Start-Process -FilePath C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ArgumentList 'C:\\Bootstrap.ps1' -Wait -PassThru\n",
+                "</powershell>"
+              ]
+            ]
+          }
+        }
+      }
+    } 
+  }
+}
+
