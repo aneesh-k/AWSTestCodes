@@ -17,7 +17,7 @@ namespace CodeTest
             //Console.Write(GetServiceOutput());
            
             string buckName = "elasticbeanstalk-us-west-2-199824416412";
-            AmazonS3.AmazonS3 s3 = new AmazonS3.AmazonS3();
+            //AmazonS3.AmazonS3 s3 = new AmazonS3.AmazonS3();
             s3.DeleteBucket(buckName);
 
             Console.WriteLine("Done");
