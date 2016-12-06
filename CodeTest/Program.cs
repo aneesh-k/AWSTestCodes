@@ -26,7 +26,7 @@ namespace CodeTest
             //AmazonS3.AmazonS3 s3 = new AmazonS3.AmazonS3();
             //s3.DeleteBucket(buckName);
 
-            Console.WriteLine("Done");
+            //Console.WriteLine("Done");
             Console.Read();
 
         }
